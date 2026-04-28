@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Windows 98 Desktop</title>
+  <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/uraniumnet/assets/windows-logo.png">
+  <style>
+    /* Regular Windows 98 font */
+    @font-face {
+      font-family: 'MSW98UI';
+      src: url(https://cdn.jsdelivr.net/gh/uraniumnet/assets/MSW98UI-Regular.woff2);
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    
+    /* Bold Windows 98 font */
+    @font-face {
+      font-family: 'MSW98UI';
+      src: url(https://cdn.jsdelivr.net/gh/uraniumnet/assets/MSW98UI-Bold.woff2);
+      font-weight: bold;
+      font-style: normal;
+      font-display: swap;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { width: 100%; height: 100%; font-family: "MSW98UI", sans-serif; background: #008080; overflow: hidden; }
+
+    /* Main desktop */
+    #desktop { position: absolute; width: 100%; height: 100%; background: #008080; }
+
+    /* Desktop icons area */
+    #icon-area { position: absolute; width: 100%; height: 100%; }
+
+    .desktop-icon { 
+      display: flex; flex-direction: column; align-items: center; gap: 4px; user-select: none; width: 80px; text-align: center; position: absolute;
+    }
+
+    .desktop-icon:hover {
+      cursor: pointer;
+    }
+
+    .desktop-icon img { width: 48px; height: 48px; image-rendering: pixelated; pointer-events: none; }
+    .desktop-icon svg { width: 48px; height: 48px; pointer-events: none; }
+    .desktop-icon-label { font-size: 11px; color: #fff; text-decoration: underline; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); line-height: 1.3; word-break: break-word; pointer-events: none; }
+
+    /* Windows */
+    .window {
+      position: absolute; background: #c0c0c0; border: 2px outset #dfdfdf;
+      border-right: 2px solid #808080; border-bottom: 2px solid #808080;
+      box-shadow: 1px 1px 0 #fff inset, 2px 2px 0 #808080;
+      display: flex; flex-direction: column; min-width: 150px; min-height: 80px;
+      overflow: hidden;
+    }
+
+    .title-bar {
+      background: linear-gradient(to right, #000080, #1084d7);
+      color: #fff; padding: 2px 2px 2px 4px;
+      display: flex; justify-content: space-between; align-items: center;
+      height: 20px; cursor: grab; user-select: none; flex-shrink: 0;
+    }
+
+    .title-bar:active { cursor: grabbing; }
+    .title-bar-text { font-size: 11px; font-weight: bold; flex: 1; }
+
+    .title-bar-buttons { display: flex; gap: 2px; }
+    .title-bar-btn { width: 16px; height: 14px; background: #c0c0c0; border: 1px outset #dfdfdf;
+      border-right: 1px solid #808080; border-bottom: 1px solid #808080;
+      font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .title-bar-btn:active { border-style: inset; }
+
+    .window-content { flex: 1; background: #c0c0c0; padding: 4px; overflow: auto; }
+
+    /* Full Edge Resize Handles */
+    .resizer {
+      position: absolute;
+      z-index: 10;
+    }
+    .resizer.n { top: -3px; left: 0; right: 0; height: 6px; cursor: n-resize; }
+    .resizer.s { bottom: -3px; left: 0; right: 0; height: 6px; cursor: s-resize; }
+    .resizer.e { right: -3px; top: 0; bottom: 0; width: 6px; cursor: e-resize; }
+    .resizer.w { left: -3px; top: 0; bottom: 0; width: 6px; cursor: w-resize; }
+    .resizer.nw { top: -5px; left: -5px; width: 10px; height: 10px; cursor: nw-resize; }
+    .resizer.ne { top: -5px; right: -5px; width: 10px; height: 10px; cursor: ne-resize; }
+    .resizer.sw { bottom: -5px; left: -5px; width: 10px; height: 10px; cursor: sw-resize; }
+    .resizer.se { bottom: -5px; right: -5px; width: 10px; height: 10px; cursor: se-resize; }
+
+    .corner-visual {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 12px;
+      height: 12px;
+      pointer-events: none;
+      background: linear-gradient(135deg, transparent 50%, #808080 50%, #808080 60%, transparent 60%, transparent 70%, #808080 70%);
+    }
+
+    /* ===== START MENU ===== */
+    #start-menu {
+      position: fixed;
+      bottom: 36px;
+      left: 2px;
+      width: 220px;
+      background: linear-gradient(to right, #c0c0c0, #dfdfdf);
+      border: 2px outset #dfdfdf;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      display: none;
+      flex-direction: column;
+      z-index: 20000;
+      box-shadow: inset 1px 1px 0 #fff, 2px 2px 0 rgba(0,0,0,0.3);
+      border-radius: 2px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    #start-menu.show {
+      display: flex;
+    }
+
+    .start-menu-header {
+      background: linear-gradient(to right, #000080, #1084d7);
+      color: #fff;
+      padding: 6px 8px;
+      font-weight: bold;
+      font-size: 12px;
+      text-align: center;
+      border-bottom: 2px solid;
+      border-bottom-color: #dfdfdf;
+    }
+
+    .start-menu-items {
+      padding: 2px 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .start-menu-item {
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.08s;
+    }
+
+    .start-menu-item:hover {
+      background: #000080;
+      color: #fff;
+    }
+
+    .start-menu-item img {
+      width: 20px;
+      height: 20px;
+      image-rendering: pixelated;
+    }
+
+    .start-menu-item svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .start-menu-item-text {
+      font-size: 11px;
+      flex: 1;
+    }
+
+    .start-menu-sep {
+      height: 2px;
+      background: linear-gradient(to right, #dfdfdf, #808080);
+      margin: 2px 0;
+      box-shadow: inset 0 1px #fff;
+    }
+
+    /* ===== IMPROVED TASKBAR ===== */
+    #taskbar {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 32px;
+      background: linear-gradient(to bottom, #c0c0c0, #dfdfdf);
+      border-top: 2px solid #dfdfdf; 
+      border-left: 1px solid #dfdfdf;
+      border-right: 1px solid #808080; 
+      border-bottom: 1px solid #808080;
+      display: flex; 
+      align-items: center; 
+      gap: 2px; 
+      padding: 2px 4px;
+      z-index: 9999;
+      box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+    }
+
+    /* Start Button */
+    .start-btn { 
+      padding: 2px 6px; 
+      background: linear-gradient(to bottom, #c0c0c0, #dfdfdf);
+      border: 2px outset #dfdfdf; 
+      border-right: 2px solid #808080; 
+      border-bottom: 2px solid #808080;
+      font-weight: bold; 
+      font-size: 15px; 
+      cursor: pointer; 
+      height: 24px; 
+      display: flex; 
+      align-items: center;
+      gap: 3px;
+      transition: all 0.08s;
+      user-select: none;
+    }
+    .start-btn:hover {
+      background: linear-gradient(to bottom, #dfdfdf, #c0c0c0);
+    }
+    .start-btn:active, .start-btn.active { 
+      border-style: inset;
+      background: linear-gradient(to bottom, #a0a0a0, #c0c0c0);
+    }
+
+    .start-btn img {
+      width: 22px;
+      height: 22px;
+      image-rendering: pixelated;
+    }
+
+    /* Taskbar separator */
+    .taskbar-sep { 
+      width: 2px; 
+      height: 24px; 
+      background: linear-gradient(to right, #dfdfdf, #606060, #dfdfdf); 
+      margin: 0 2px; 
+      box-shadow: inset 1px 0 #fff, inset -1px 0 #808080;
+    }
+
+    /* Quick Launch Bar */
+    .quick-launch {
+      display: flex;
+      gap: 2px;
+      padding: 2px;
+      border-right: 2px solid;
+      border-image: linear-gradient(to bottom, #c0c0c0, #dfdfdf);
+      box-shadow: inset 1px 0 #dfdfdf;
+    }
+
+    .quick-btn {
+      width: 24px;
+      height: 24px;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 2px outset transparent;
+      border-right: 2px solid transparent;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.08s;
+      user-select: none;
+    }
+    .quick-btn:hover {
+      background: linear-gradient(to bottom, #c0c0c0, #dfdfdf);
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+    }
+    .quick-btn:active {
+      border-style: inset;
+      background: linear-gradient(to bottom, #a0a0a0, #c0c0c0);
+    }
+
+    .quick-btn img, .quick-btn svg {
+      width: 16px;
+      height: 16px;
+      image-rendering: pixelated;
+    }
+
+    /* Taskbar Windows */
+    #taskbar-windows { 
+      display: flex; 
+      gap: 2px; 
+      flex: 1; 
+      overflow-x: auto; 
+      align-items: center;
+      padding: 0 4px;
+      min-width: 0;
+    }
+
+    .taskbar-item {
+      padding: 2px 8px; 
+      background: linear-gradient(to bottom, #c0c0c0, #dfdfdf);
+      border: 2px outset #dfdfdf; 
+      border-right: 2px solid #808080; 
+      border-bottom: 2px solid #808080;
+      font-size: 11px; 
+      cursor: pointer; 
+      max-width: 150px; 
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.08s;
+      user-select: none;
+    }
+    .taskbar-item:hover {
+      background: linear-gradient(to bottom, #dfdfdf, #c0c0c0);
+    }
+    .taskbar-item:active, .taskbar-item.active { 
+      border-style: inset;
+      background: linear-gradient(to bottom, #a0a0a0, #c0c0c0);
+      box-shadow: inset 1px 1px 0 #606060;
+    }
+
+    /* System Tray */
+    .taskbar-tray { 
+      display: flex; 
+      gap: 2px; 
+      align-items: center; 
+      padding: 2px 4px;
+      margin-left: auto;
+      border-left: 2px solid;
+      border-left-color: #808080;
+      box-shadow: inset 1px 0 #dfdfdf;
+    }
+
+    .tray-item {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.08s;
+      user-select: none;
+    }
+
+    .tray-icon {
+      background: linear-gradient(to bottom, #c0c0c0, #dfdfdf);
+      border: 2px outset #dfdfdf;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.08s;
+    }
+    .tray-icon:hover {
+      background: linear-gradient(to bottom, #dfdfdf, #c0c0c0);
+    }
+    .tray-icon:active {
+      border-style: inset;
+      background: linear-gradient(to bottom, #a0a0a0, #c0c0c0);
+    }
+
+    .tray-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Clock in tray */
+    .clock { 
+      font-size: 11px; 
+      font-weight: bold; 
+      padding: 2px 6px; 
+      background: linear-gradient(to bottom, #c0c0c0, #dfdfdf);
+      border: 2px outset #dfdfdf;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      min-width: 50px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .clock:hover {
+      background: linear-gradient(to bottom, #dfdfdf, #c0c0c0);
+    }
+
+    .version-text { position: fixed; bottom: 2px; right: 4px; font-size: 10px; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+
+    /* Game grid */
+    .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; padding: 4px; }
+    .game-item { padding: 8px; background: #dfdfdf; border: 1px solid #000; cursor: pointer; text-align: center; font-size: 11px; transition: all 0.1s; }
+    .game-item:hover { background: #000080; color: #fff; transform: scale(1.02); }
+    .game-item:active { transform: scale(0.98); }
+
+    iframe { width: 100%; height: 100%; border: none; background: white; }
+  </style>
+</head>
+<body>
+
+<div id="desktop">
+  <div id="icon-area">
+    <!-- Desktop icons -->
+    <div class="desktop-icon" data-icon="games" onclick="openGamesWindow()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/joystick.png" alt="Games">
+      <div class="desktop-icon-label">Games</div>
+    </div>
+
+    <div class="desktop-icon" data-icon="alexr" onclick="openWebPortal()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/alexr-logo.png" alt="alexr's world">
+      <div class="desktop-icon-label">alexr's world</div>
+    </div>
+
+    <div class="desktop-icon" data-icon="discord" onclick="openDiscord()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/discord.png" alt="Discord">
+      <div class="desktop-icon-label">Discord</div>
+    </div>
+
+    <div class="desktop-icon" data-icon="chatroom" onclick="openChatroom()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/chatroom.png" alt="Chatroom">
+      <div class="desktop-icon-label">Chatroom</div>
+    </div>
+
+    <div class="desktop-icon" data-icon="winamp" onclick="openWinamp()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/winamp.png" alt="Winamp">
+      <div class="desktop-icon-label">Winamp</div>
+    </div>
+
+    <div class="desktop-icon" data-icon="recycle" onclick="alert('Recycle Bin is empty')">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/recycle-bin.png" alt="Recycle Bin">
+      <div class="desktop-icon-label">Recycle Bin</div>
+    </div>
+  </div>
+</div>
+
+<!-- START MENU -->
+<div id="start-menu">
+  <div class="start-menu-header">Start Menu</div>
+  <div class="start-menu-items">
+    <div class="start-menu-item" onclick="openGamesWindow(); closeStartMenu()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/joystick.png" alt="Games">
+      <span class="start-menu-item-text">Games</span>
+    </div>
+    <div class="start-menu-item" onclick="openWebPortal(); closeStartMenu()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/alexr-logo.png" alt="alexr">
+      <span class="start-menu-item-text">alexr's world</span>
+    </div>
+    <div class="start-menu-item" onclick="openDiscord(); closeStartMenu()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/discord.png" alt="Discord">
+      <span class="start-menu-item-text">Discord</span>
+    </div>
+    <div class="start-menu-item" onclick="openChatroom(); closeStartMenu()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/chatroom.png" alt="Chatroom">
+      <span class="start-menu-item-text">Chatroom</span>
+    </div>
+    <div class="start-menu-item" onclick="openWinamp(); closeStartMenu()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/winamp.png" alt="Winamp">
+      <span class="start-menu-item-text">Winamp</span>
+    </div>
+    <div class="start-menu-sep"></div>
+    <div class="start-menu-item" onclick="alert('Recycle Bin is empty'); closeStartMenu()">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/recycle-bin.png" alt="Recycle">
+      <span class="start-menu-item-text">Recycle Bin</span>
+    </div>
+  </div>
+</div>
+
+<!-- TASKBAR -->
+<div id="taskbar">
+  <button class="start-btn" id="start-btn" title="Click to open Start Menu">
+    <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/windows-logo.png" alt="Windows">
+    <span>Start</span>
+  </button>
+  <div class="taskbar-sep"></div>
+
+  <div class="quick-launch">
+    <button class="quick-btn" onclick="openWebPortal()" title="alexr's world">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/alexr-logo.png" alt="alexr">
+    </button>
+    <button class="quick-btn" onclick="openGamesWindow()" title="Games">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/joystick.png" alt="games">
+    </button>
+    <button class="quick-btn" onclick="openDiscord()" title="Discord">
+      <img src="https://cdn.jsdelivr.net/gh/uraniumnet/assets/discord.png" alt="discord">
+    </button>
+  </div>
+
+  <div class="taskbar-sep"></div>
+  <div id="taskbar-windows"></div>
+
+  <div class="taskbar-tray">
+    <div class="tray-icon" title="Volume">
+      <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><polygon points="2,6 2,10 5,10 8,12 8,4 5,6" fill="#000"/><path d="M10 6 Q12 8 10 10" stroke="#000" stroke-width="1" fill="none"/></svg>
+    </div>
+    <div class="clock" id="clock">12:00 AM</div>
+  </div>
+</div>
+
+<div class="version-text">Windows 98 4.10.1998</div>
+
+<script>
+const REPO_OWNER = 'jordanwuztaken';
+const REPO_NAME = 'charex_games';
+const REPO_BRANCH = 'main';
+const DISCORD_INVITE = 'https://discord.gg/YOUR_INVITE_CODE';
+const CHATROOM_URL = 'https://sprintingsnail69.github.io/chat-room/';
+const WINAMP_URL = 'https://webamp.org/';
+
+const GAMES = [
+  "amanda-the-adventurer", "andys-apple-farm", "baldi-plus", "baldi-remaster", "bendy", "bergentruck",
+  "bloodmoney", "buckshot-roulette", "class-of-09", "cuphead", "dead-plate", "deadseat", "deltatraveler",
+  "donottakethiscathome", "fears-to-fathom", "getting-over-it", "happy-sheepies", "hotline-miami",
+  "human-expenditure-program", "jelly-drift", "karlson", "kindergarten", "lacysflashgames", "milkman-karlson",
+  "minesweeperplus", "omori-fixed", "people-playground", "pizza-tower", "raft", "repo", "schoolboy-runaway",
+  "slender", "sonic.exe", "speed-stars", "tattletail", "thats-not-my-neighbor", "the-man-in-the-window",
+  "ultrakill", "undertale-yellow", "web-fishing", "witch-heart", "yandere-simulator", "yume-nikki"
+];
+
+function gameUrl(dir) {
+  return `https://raw.githack.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/${dir}/index.html`;
+}
+
+// Icon placement logic
+const icons = document.querySelectorAll('.desktop-icon');
+icons.forEach((icon, index) => {
+  icon.style.left = '10px';
+  icon.style.top = (10 + index * 100) + 'px';
+});
+
+// Moveable Desktop Icons (Right Click)
+let draggingIcon = null;
+let iconStartX, iconStartY, iconOffsetX, iconOffsetY;
+
+icons.forEach(icon => {
+  icon.addEventListener('contextmenu', e => e.preventDefault());
+  icon.addEventListener('mousedown', e => {
+    if (e.button === 2) {
+      draggingIcon = icon;
+      iconStartX = e.clientX;
+      iconStartY = e.clientY;
+      iconOffsetX = parseInt(icon.style.left);
+      iconOffsetY = parseInt(icon.style.top);
+      e.preventDefault();
+    }
+  });
+});
+
+document.addEventListener('mousemove', e => {
+  if (draggingIcon) {
+    draggingIcon.style.left = (iconOffsetX + (e.clientX - iconStartX)) + 'px';
+    draggingIcon.style.top = (iconOffsetY + (e.clientY - iconStartY)) + 'px';
+  }
+});
+
+document.addEventListener('mouseup', () => draggingIcon = null);
+
+// Start Menu logic
+const startBtn = document.getElementById('start-btn');
+const startMenu = document.getElementById('start-menu');
+startBtn.addEventListener('click', () => {
+  startMenu.classList.toggle('show');
+  startBtn.classList.toggle('active');
+});
+
+function closeStartMenu() {
+  startMenu.classList.remove('show');
+  startBtn.classList.remove('active');
+}
+
+document.addEventListener('click', e => {
+  if (!startBtn.contains(e.target) && !startMenu.contains(e.target)) closeStartMenu();
+});
+
+// Window Manager
+class WindowManager {
+  constructor() {
+    this.windows = {};
+    this.zIndex = 100;
+    this.draggingWindow = null;
+    this.resizingWindow = null;
+    this.resizerType = null;
+    this.dragOffset = { x: 0, y: 0 };
+    this.resizeStart = { x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 };
+  }
+
+  create(id, title, width, height, content) {
+    if (this.windows[id]) {
+      this.restore(id);
+      return;
+    }
+
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.id = 'win-' + id;
+    win.style.width = width + 'px';
+    win.style.height = height + 'px';
+    win.style.left = (50 + Math.random() * 50) + 'px';
+    win.style.top = (50 + Math.random() * 50) + 'px';
+    win.style.zIndex = ++this.zIndex;
+
+    win.innerHTML = `
+      <div class="title-bar">
+        <div class="title-bar-text">${title}</div>
+        <div class="title-bar-buttons">
+          <button class="title-bar-btn" data-action="minimize">_</button>
+          <button class="title-bar-btn" data-action="close">x</button>
+        </div>
+      </div>
+      <div class="window-content"></div>
+      <!-- Resizers -->
+      <div class="resizer n"></div><div class="resizer s"></div>
+      <div class="resizer e"></div><div class="resizer w"></div>
+      <div class="resizer nw"></div><div class="resizer ne"></div>
+      <div class="resizer sw"></div><div class="resizer se"></div>
+      <div class="corner-visual"></div>
+    `;
+
+    const contentDiv = win.querySelector('.window-content');
+    if (typeof content === 'string') contentDiv.innerHTML = content;
+    else contentDiv.appendChild(content);
+
+    document.getElementById('desktop').appendChild(win);
+
+    // Title bar actions
+    win.querySelectorAll('.title-bar-btn').forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        if (action === 'close') this.close(id);
+        else if (action === 'minimize') this.minimize(id);
+      };
+    });
+
+    // Dragging
+    const titleBar = win.querySelector('.title-bar');
+    titleBar.onmousedown = e => {
+      this.draggingWindow = id;
+      this.dragOffset.x = e.clientX - win.offsetLeft;
+      this.dragOffset.y = e.clientY - win.offsetTop;
+      this.focus(id);
+    };
+
+    // Multi-edge Resizing
+    win.querySelectorAll('.resizer').forEach(resizer => {
+      resizer.onmousedown = e => {
+        e.stopPropagation();
+        this.resizingWindow = id;
+        this.resizerType = resizer.classList[1];
+        this.resizeStart = {
+          x: e.clientX,
+          y: e.clientY,
+          width: win.offsetWidth,
+          height: win.offsetHeight,
+          left: win.offsetLeft,
+          top: win.offsetTop
+        };
+        this.focus(id);
+      };
+    });
+
+    // Taskbar Item
+    const taskBtn = document.createElement('div');
+    taskBtn.className = 'taskbar-item active';
+    taskBtn.textContent = title;
+    taskBtn.onclick = () => this.windows[id].minimized ? this.restore(id) : this.minimize(id);
+    document.getElementById('taskbar-windows').appendChild(taskBtn);
+
+    this.windows[id] = { el: win, taskBtn, minimized: false };
+    this.focus(id);
+  }
+
+  focus(id) {
+    Object.values(this.windows).forEach(w => w.taskBtn.classList.remove('active'));
+    if (this.windows[id]) {
+      this.windows[id].el.style.zIndex = ++this.zIndex;
+      this.windows[id].taskBtn.classList.add('active');
+    }
+  }
+
+  close(id) {
+    if (this.windows[id]) {
+      this.windows[id].el.remove();
+      this.windows[id].taskBtn.remove();
+      delete this.windows[id];
+    }
+  }
+
+  minimize(id) {
+    if (this.windows[id]) {
+      this.windows[id].el.style.display = 'none';
+      this.windows[id].minimized = true;
+    }
+  }
+
+  restore(id) {
+    if (this.windows[id]) {
+      this.windows[id].el.style.display = 'flex';
+      this.windows[id].minimized = false;
+      this.focus(id);
+    }
+  }
+}
+
+const wm = new WindowManager();
+
+document.onmousemove = e => {
+  if (wm.draggingWindow) {
+    const win = wm.windows[wm.draggingWindow];
+    win.el.style.left = (e.clientX - wm.dragOffset.x) + 'px';
+    win.el.style.top = (e.clientY - wm.dragOffset.y) + 'px';
+  }
+
+  if (wm.resizingWindow) {
+    const win = wm.windows[wm.resizingWindow];
+    const rs = wm.resizeStart;
+    const type = wm.resizerType;
+    const dx = e.clientX - rs.x;
+    const dy = e.clientY - rs.y;
+
+    if (type.includes('e')) {
+      win.el.style.width = Math.max(150, rs.width + dx) + 'px';
+    } else if (type.includes('w')) {
+      const newWidth = Math.max(150, rs.width - dx);
+      if (newWidth > 150) {
+        win.el.style.width = newWidth + 'px';
+        win.el.style.left = (rs.left + dx) + 'px';
+      }
+    }
+
+    if (type.includes('s')) {
+      win.el.style.height = Math.max(80, rs.height + dy) + 'px';
+    } else if (type.includes('n')) {
+      const newHeight = Math.max(80, rs.height - dy);
+      if (newHeight > 80) {
+        win.el.style.height = newHeight + 'px';
+        win.el.style.top = (rs.top + dy) + 'px';
+      }
+    }
+  }
+};
+
+document.onmouseup = () => {
+  wm.draggingWindow = null;
+  wm.resizingWindow = null;
+};
+
+// Utils
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  document.getElementById('clock').textContent = `${h}:${m} ${ampm}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function openGamesWindow() {
+  const div = document.createElement('div');
+  div.className = 'games-grid';
+  GAMES.forEach(game => {
+    const item = document.createElement('div');
+    item.className = 'game-item';
+    item.textContent = game;
+    item.ondblclick = () => openGameWindow(game);
+    div.appendChild(item);
+  });
+  wm.create('games', 'Games', 600, 400, div);
+}
+
+function openGameWindow(gameDir) {
+  const div = document.createElement('div');
+  div.style.height = '100%';
+  div.style.display = 'flex';
+  div.style.flexDirection = 'column';
+  div.innerHTML = `
+    <div style="padding:4px; background:#c0c0c0; font-size:11px;">
+      <button onclick="window.open('${gameUrl(gameDir)}', '_blank')" style="cursor:pointer">Open in Tab</button>
+    </div>
+    <iframe src="${gameUrl(gameDir)}" style="flex:1"></iframe>
+  `;
+  wm.create('game-' + gameDir, 'Game: ' + gameDir, 800, 500, div);
+}
+
+function openWebPortal() {
+  const iframe = document.createElement('iframe');
+  iframe.src = 'https://alexrnetworks.github.io/alexrsworld';
+  wm.create('web-portal', "alexr's world", 800, 500, iframe);
+}
+
+function openDiscord() { window.open(DISCORD_INVITE, '_blank'); }
+
+function openChatroom() {
+  const iframe = document.createElement('iframe');
+  iframe.src = CHATROOM_URL;
+  wm.create('chatroom', 'Chatroom', 800, 500, iframe);
+}
+
+function openWinamp() {
+  const iframe = document.createElement('iframe');
+  iframe.src = WINAMP_URL;
+  wm.create('winamp', 'Winamp', 350, 250, iframe);
+}
+</script>
+</body>
+</html>
